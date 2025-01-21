@@ -97,6 +97,8 @@ celerybeat-schedule
 # Environments
 .env
 .env.*
+# exclude .env.example files from git
+!.env.example
 .venv
 venv/
 ENV/
