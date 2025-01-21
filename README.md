@@ -11,40 +11,37 @@ python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
-
 # Technologies Used
 
-# Technologies Used
-
-## FastAPI
+### FastAPI
 - **Description**: FastAPI is a modern, fast (high-performance), web framework for building APIs with Python 3.6+ based on standard Python type hints.
 - **Usage in Project**: It is used to create the API endpoints for the recommendation system, handle HTTP requests, and manage routing.
 
-## Uvicorn
+### Uvicorn
 - **Description**: Uvicorn is a lightning-fast ASGI server implementation, using `uvloop` and `httptools`.
 - **Usage in Project**: It is used to serve the FastAPI application.
 
-## SQLAlchemy
+### SQLAlchemy
 - **Description**: SQLAlchemy is the Python SQL toolkit and Object-Relational Mapping (ORM) library that gives application developers the full power and flexibility of SQL.
 - **Usage in Project**: It is used to manage database connections, define database models, and perform database operations.
 
-## Pydantic
+### Pydantic
 - **Description**: Pydantic is a data validation and settings management library using Python type annotations.
 - **Usage in Project**: It is used to validate and parse data coming into the API endpoints and to manage application settings.
 
-## NumPy
+### NumPy
 - **Description**: NumPy is the fundamental package for array computing with Python.
 - **Usage in Project**: It is used for numerical operations and handling arrays in the recommendation algorithms.
 
-## Pandas
+### Pandas
 - **Description**: Pandas is a fast, powerful, flexible, and easy-to-use open-source data analysis and data manipulation library built on top of the Python programming language.
 - **Usage in Project**: It is used to handle and manipulate data fetched from the database for the recommendation algorithms.
 
-## scikit-learn
+### scikit-learn
 - **Description**: scikit-learn is a machine learning library for the Python programming language. It features various classification, regression, and clustering algorithms.
 - **Usage in Project**: It is used to implement the content-based filtering algorithm for generating recommendations.
 
-## psycopg2
+### psycopg2
 - **Description**: psycopg2 is a PostgreSQL adapter for the Python programming language.
 - **Usage in Project**: It is used to connect and interact with the PostgreSQL database.
 
