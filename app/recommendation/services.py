@@ -1,4 +1,4 @@
-from app.recommendation.algorithms.collaborative_based_filtering import content_based_filtering
+from app.recommendation.algorithms.content_based_filtering import content_based_filtering
 import pandas as pd
 
 def get_content_based_recommendations(db):
