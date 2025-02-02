@@ -14,7 +14,7 @@ def process_achievements_by_type(achievements) -> dict:
     Expected achievement dict format:
       {
         'profile_name': ...,
-        'type': ...,         # one of 'EXPERIENCE', 'EDUCATION', or other for certifications/projects
+        'type': one of 'EXPERIENCE', 'EDUCATION', or other for certifications/projects
         'description': ...,
         'organization': ...,
         'position': ...,
@@ -139,7 +139,7 @@ def content_based_filtering(mentee: pd.DataFrame, mentors: pd.DataFrame, top_k: 
       1. Process the mentee's achievement record.
       2. Process each mentor's achievement record.
       3. Combine achievements with other profile features.
-      4. Build TF-IDF vectors and compute cosine similarity.
+      4. Build TF-IDF vectors / CountVectorizer and compute cosine similarity. 
       5. Return top_k mentor recommendations.
     :param mentee: A pandas Series representing a single mentee's record.
     :param mentors: A pandas DataFrame with mentor records.
@@ -149,6 +149,8 @@ def content_based_filtering(mentee: pd.DataFrame, mentors: pd.DataFrame, top_k: 
 
     # Process mentee achievement (wrap single record dict in a list)
     achievements = mentee[['profile_name', 'type', 'description', 'organization', 'position', 'major']].to_dict('records')
+
+    # Process mentee achievements by type including experience, education, and certification
     mentee_achievements = process_achievements_by_type(achievements)
 
     # Base textual features for mentee
@@ -162,7 +164,6 @@ def content_based_filtering(mentee: pd.DataFrame, mentors: pd.DataFrame, top_k: 
     )
 
     mentee_text = combine_weighted_features(common_info_str, mentee_achievements)
-    logger.info(f"Mentee combined features: {mentee_text}")
 
     # Process mentor achievements: a mentor has multiple achievements and 
     # we query all mentors in database
@@ -174,11 +175,19 @@ def content_based_filtering(mentee: pd.DataFrame, mentors: pd.DataFrame, top_k: 
         f"Processed mentor data:\n{json.dumps(mentors_processed.to_dict(orient='records'), indent=4, ensure_ascii=False)}"
     )
     
-    # Build TF-IDF Vectors for the mentee and mentors
-    vectorizer = CountVectorizer(stop_words='english')
-    #Define a TF-IDF Vectorizer Object. Remove all english stopwords
+    # Build Count Vectors for the mentee and mentors
+    vectorizer = CountVectorizer(stop_words='english') # Stop words are common words (e.g. "the", "and", "is") 
+
+    # Fit the vectorizer on the mentee text and transform the mentor text
+    # NOTE There are some words like university, college, etc. that are common in education and experience
+    # but may not be relevant for the recommendation. We can adjust the vectorizer settings to exclude them.
     mentee_vector = vectorizer.fit_transform([mentee_text])
+    logger.info(f"Mentee vector features: {vectorizer.get_feature_names_out()}")
+    logger.info(f"Mentee vector shape: {mentee_vector.shape}")
+    # Transform mentor text following the mentee vectorizer
     mentor_vectors = vectorizer.transform(mentors_processed["combined_features"])
+    logger.info(f"Mentor vector features: {vectorizer.get_feature_names_out()}")
+    logger.info(f"Mentor vectors shape: {mentor_vectors.shape}")
     
     # Compute cosine similarity between the mentee and each mentor
     similarities = cosine_similarity(mentee_vector, mentor_vectors)
@@ -187,7 +196,13 @@ def content_based_filtering(mentee: pd.DataFrame, mentors: pd.DataFrame, top_k: 
     # Get indices of top_k mentors with highest similarity values
     top_indices = similarities.argsort(axis=1).flatten()[-top_k:][::-1]
     logger.info(f"Top indices: {top_indices}")
-    recommendations = mentors_processed.iloc[top_indices]
+
+    # Get the corresponding similarity scores
+    similarity_scores = similarities[0][top_indices]
     
-    # Return recommendations containing key mentor information (adjust columns as needed)
-    return recommendations[['account_id', 'account_name']]
+    # Select the recommended mentors and add the similarity score column
+    recommendations = mentors_processed.iloc[top_indices].copy()
+    recommendations["similarity"] = similarity_scores
+    
+    # Return recommendations containing key mentor information along with similarity score
+    return recommendations[['account_id', 'account_name', 'similarity']]
