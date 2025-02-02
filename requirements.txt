@@ -6,4 +6,7 @@ pydantic-settings
 numpy
 pandas
 scikit-learn
-psycopg2
+structlog
+asgi-correlation-id
+ddtrace
+psycopg2-binary
