@@ -7,8 +7,9 @@ import logging
 from asgi_correlation_id import CorrelationIdMiddleware
 from asgi_correlation_id.context import correlation_id
 from app.core.config import settings
-from .core.custom_logging import setup_logging
+from app.core.custom_logging import setup_logging
 from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from app.api.recommendations import router as recommendation_router
 from uvicorn.protocols.utils import get_path_with_query_string
 
@@ -18,6 +19,14 @@ setup_logging(json_logs=LOG_JSON_FORMAT, log_level=LOG_LEVEL)
 
 access_logger = structlog.stdlib.get_logger("api.access")
 app = FastAPI(title="BK Sharing - Recommendation System", version="0.1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Cho phép tất cả các domain gọi API (FE)
+    allow_credentials=True,
+    allow_methods=["*"],  # Cho phép tất cả các phương thức HTTP
+    allow_headers=["*"],  # Cho phép tất cả headers
+)
 
 app.include_router(recommendation_router, prefix="/api/v1", tags=["recommendation"])
 

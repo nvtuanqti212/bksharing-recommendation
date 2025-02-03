@@ -1,4 +1,7 @@
 from pydantic_settings import BaseSettings  # Sử dụng BaseSettings từ pydantic-settings
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Settings(BaseSettings):
     DATABASE_URL: str  # Định nghĩa các biến cấu hình tại đây
@@ -16,4 +19,3 @@ class Settings(BaseSettings):
 
 # Tạo một đối tượng `settings` để sử dụng trong ứng dụng
 settings = Settings()
-
