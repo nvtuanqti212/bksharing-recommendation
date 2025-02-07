@@ -11,6 +11,12 @@ python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
+
+- Run Application
+
+```bash
+python -m uvicorn app.main:app --reload
+```
 # Technologies Used
 
 ### FastAPI

@@ -1,6 +1,6 @@
 import structlog
 import json
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
 from app.core.config import settings
@@ -176,7 +176,7 @@ def content_based_filtering(mentee: pd.DataFrame, mentors: pd.DataFrame, top_k: 
     )
     
     # Build Count Vectors for the mentee and mentors
-    vectorizer = CountVectorizer(stop_words='english') # Stop words are common words (e.g. "the", "and", "is") 
+    vectorizer = TfidfVectorizer(stop_words='english') # Stop words are common words (e.g. "the", "and", "is") 
 
     # Fit the vectorizer on the mentee text and transform the mentor text
     # NOTE There are some words like university, college, etc. that are common in education and experience
@@ -206,3 +206,5 @@ def content_based_filtering(mentee: pd.DataFrame, mentors: pd.DataFrame, top_k: 
     
     # Return recommendations containing key mentor information along with similarity score
     return recommendations[['account_id', 'account_name', 'similarity']]
+
+
