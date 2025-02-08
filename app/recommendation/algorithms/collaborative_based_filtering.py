@@ -142,6 +142,11 @@ def predict_click(user_account_id, mentor_account_id, clicks_df, residual_matrix
     for j in candidate_items:
         if j == mentor_account_id:
             continue
+
+        if mentor_account_id not in similarity_df.index:
+            continue
+        logger.info(f"🚀 ~ mentor_account_id: {mentor_account_id}")
+        logger.info(f"🚀 ~ j: {j}")
         sim = similarity_df.loc[mentor_account_id, j]
         # Lấy phần dư của student đối với mentor j
         resid = user_clicks[user_clicks['mentor_account_id'] == j]['residual'].values[0]
@@ -198,6 +203,7 @@ def collaborative_filtering(student: pd.DataFrame, clicks_df: pd.DataFrame, ment
     # Bước 3: Tính toán ma trận similarity giữa các mentor
     similarity_df = compute_similarity_matrix(residual_matrix, lambda_param=lambda_param,
                                                 transform=transform_similarity)
+    logger.info(f"🚀 ~ similarity_df: {similarity_df}")
     logger.info("Computed mentor similarity matrix.")
     
     # Bước 4: Dự đoán click_count cho từng mentor cho student dựa trên collaborative filtering
