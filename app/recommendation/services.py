@@ -63,12 +63,12 @@ def get_collaborative_filtering_recommendations(db, accountId):
 
     clicks_df =  pd.DataFrame(db.execute(clicks_query_string).fetchall())
 
-    mentors_query_string = text('''
-      select acc.id    as account_id,
-      acc.name         as account_name
-         from accounts acc join mentors men on acc.id = men.account_id ''')
+    # mentors_query_string = text('''
+    #   select acc.id    as account_id,
+    #   acc.name         as account_name
+    #      from accounts acc join mentors men on acc.id = men.account_id ''')
     
-    mentors_df = pd.DataFrame(db.execute(mentors_query_string).fetchall())
+    # mentors_df = pd.DataFrame(db.execute(mentors_query_string).fetchall())
 
     # Fetch student data from database
     student_query_string = text('''
@@ -84,8 +84,7 @@ def get_collaborative_filtering_recommendations(db, accountId):
         logger.error(f"Student with account id {accountId} not found")
         return None
 
-    recommendations = collaborative_filtering(student_record, clicks_df, mentors_df,
-                                              top_k_neighbors=5, top_n=10, lambda_param=100,
+    recommendations = collaborative_filtering(student_record, clicks_df, top_k_neighbors=5, top_n=10, lambda_param=100,
                                               transform_similarity=True)
     
     logger.info(

@@ -10,6 +10,10 @@ logger = structlog.get_logger('collaborative_filtering')
 # 1. TÍNH BASELINE PREDICTORS VÀ PHẦN DƯ (RESIDUALS) DỰA TRÊN CLICK_COUNT
 # =============================================================================
 def compute_baseline_and_residuals(clicks_df: pd.DataFrame):
+    # Convert dataframe to matrix
+    # clicks_df = clicks_df.pivot_table(index='student_account_id', columns='mentor_account_id', values='click_count')
+    # logger.info(f"🚀 ~ clicks_df: \n {clicks_df}")
+
     """
     Tính baseline predictors cho mỗi lượt click theo công thức:
         b_ui = μ + b_u + b_i
@@ -25,6 +29,7 @@ def compute_baseline_and_residuals(clicks_df: pd.DataFrame):
     """
     # Tính trung bình toàn hệ thống
     global_avg = clicks_df['click_count'].mean()
+    logger.info(f"Global average click_count: {global_avg}")
     
     # Tính bias cho student: trung bình click_count của student trừ global_avg
     user_bias = clicks_df.groupby('student_account_id')['click_count'].mean() - global_avg
@@ -110,7 +115,7 @@ def compute_similarity_matrix(residual_matrix: pd.DataFrame, lambda_param=100, t
 # =============================================================================
 # 3. DỰ ĐOÁN CLICK_COUNT CHO MỘT STUDENT VỚI MỘT MENTOR CHƯA ĐƯỢC CLICK
 # =============================================================================
-def predict_click(user_account_id, mentor_account_id, clicks_df, residual_matrix, similarity_df, global_avg, user_bias, item_bias, k=5):
+def predict_click(user_account_id, mentor_account_id, clicks_df, similarity_df, global_avg, user_bias, item_bias, k=5):
     """
     Dự đoán số lượt click (click_count) của student (user_account_id) đối với mentor (mentor_id)
     chưa có dữ liệu, theo mô hình item-item collaborative filtering dựa trên phần dư:
@@ -133,8 +138,6 @@ def predict_click(user_account_id, mentor_account_id, clicks_df, residual_matrix
     
     # Lấy các mentor mà student đã click (trong clicks_df)
     user_clicks = clicks_df[clicks_df['student_account_id'] == user_account_id]
-    if user_clicks.empty:
-        return baseline_ui  # Nếu student chưa có click nào, trả về baseline
     
     # Tập hàng xóm: các mentor mà student đã click (loại trừ mentor_account_id hiện tại)
     candidate_items = user_clicks['mentor_account_id'].unique()
@@ -143,10 +146,6 @@ def predict_click(user_account_id, mentor_account_id, clicks_df, residual_matrix
         if j == mentor_account_id:
             continue
 
-        if mentor_account_id not in similarity_df.index:
-            continue
-        logger.info(f"🚀 ~ mentor_account_id: {mentor_account_id}")
-        logger.info(f"🚀 ~ j: {j}")
         sim = similarity_df.loc[mentor_account_id, j]
         # Lấy phần dư của student đối với mentor j
         resid = user_clicks[user_clicks['mentor_account_id'] == j]['residual'].values[0]
@@ -168,7 +167,7 @@ def predict_click(user_account_id, mentor_account_id, clicks_df, residual_matrix
 # =============================================================================
 # 4. HÀM RECOMMENDATION CHÍNH (COLLABORATIVE FILTERING DỰA TRÊN CLICK)
 # =============================================================================
-def collaborative_filtering(student: pd.DataFrame, clicks_df: pd.DataFrame, mentors: pd.DataFrame,
+def collaborative_filtering(student: pd.DataFrame, clicks_df: pd.DataFrame, 
                               top_k_neighbors: int = 5, top_n: int = 10, lambda_param: int = 100,
                               transform_similarity: bool = True):
     """
@@ -195,10 +194,14 @@ def collaborative_filtering(student: pd.DataFrame, clicks_df: pd.DataFrame, ment
         return pd.DataFrame()
 
     # Bước 1: Tính baseline và phần dư cho bảng click
+    logger.info("=======================COMPUTE BASELINE AND RESIDUALS=======================")
     global_avg, user_bias, item_bias, clicks_df = compute_baseline_and_residuals(clicks_df)
+    logger.info(f"clicks_df: \n {clicks_df.pivot_table(index='student_account_id', columns='mentor_account_id', values='baseline')}")
     
     # Bước 2: Xây dựng ma trận residual (pivot table)
+    logger.info("=======================BUILD RESIDUAL MATRIX=======================")
     residual_matrix = clicks_df.pivot_table(index='student_account_id', columns='mentor_account_id', values='residual')
+    logger.info(f"🚀 ~ residual_matrix: {residual_matrix}")
     
     # Bước 3: Tính toán ma trận similarity giữa các mentor
     similarity_df = compute_similarity_matrix(residual_matrix, lambda_param=lambda_param,
@@ -207,6 +210,7 @@ def collaborative_filtering(student: pd.DataFrame, clicks_df: pd.DataFrame, ment
     logger.info("Computed mentor similarity matrix.")
     
     # Bước 4: Dự đoán click_count cho từng mentor cho student dựa trên collaborative filtering
+    logger.info("=======================PREDICT CLICKS=======================")
     student_dict = student[['account_id', 'account_name']].to_dict('records')
     logger.info(f"Recommend mentors for student {student_dict}.")
     # Since there's only one element, get the first element from the list
@@ -214,18 +218,33 @@ def collaborative_filtering(student: pd.DataFrame, clicks_df: pd.DataFrame, ment
     logger.info(f"First student: {first_student}")
     student_account_id = first_student['account_id']
 
-    # Lấy danh sách tất cả mentor từ mentors DataFrame (trường account_id)
-    all_mentor_ids = mentors['account_id'].unique()
-    predictions = []
-    for mentor_account_id in all_mentor_ids:
-        pred = predict_click(student_account_id, mentor_account_id, clicks_df, residual_matrix,
-                              similarity_df, global_avg, user_bias, item_bias, k=top_k_neighbors)
-        predictions.append((mentor_account_id, pred))
-    pred_df = pd.DataFrame(predictions, columns=['mentor_account_id', 'predicted_click'])
-    pred_df = pred_df.sort_values(by='predicted_click', ascending=False).head(top_n)
+    for mentor_account_id in residual_matrix.columns:
+        # Nếu mentor đã được student click rồi, bỏ qua
+        if clicks_df[(clicks_df['student_account_id'] == student_account_id) & (clicks_df['mentor_account_id'] == mentor_account_id)].shape[0] > 0:
+            logger.info(f"Student {student_account_id} has clicked mentor {mentor_account_id}. Skip.")
+            continue
+        pred = predict_click(student_account_id, mentor_account_id, clicks_df, 
+                             similarity_df, global_avg, user_bias, item_bias, k=top_k_neighbors)
+        logger.info(f"Predicted click_count for student {student_account_id} and mentor {mentor_account_id}: {pred}")
     
-    # Bước 5: Kết hợp thông tin mentor và trả về danh sách recommended
-    recommendations = pd.merge(pred_df, mentors, left_on='mentor_account_id', right_on='account_id', how='left')
-    recommendations = recommendations[['account_id', 'account_name', 'predicted_click']]
+        new_row = pd.DataFrame({"student_account_id": [student_account_id], "mentor_account_id": [mentor_account_id], "click_count": [pred]})
+        clicks_df = pd.concat([clicks_df, new_row], ignore_index=True)
+    
+    predict_click_matrix = clicks_df.pivot_table(index='student_account_id', columns='mentor_account_id', values='click_count')
+    logger.info(f"🚀 ~ predict_click_matrix: \n {predict_click_matrix}")
+    
+    # Buooc 5: Sắp xếp theo dự đoán click_count và trả về top_n mentor recommended
+    logger.info("=======================RECOMMEND MENTORS=======================")
+    recommendations = clicks_df[clicks_df['student_account_id'] == student_account_id][['mentor_account_id', 'click_count']]
+    logger.info(f"Recommended mentors: {recommendations}")
+
+    # Filter the nan values and sort
+    # NOTE: Check why there are nan values
+    recommendations = recommendations.dropna().sort_values('click_count', ascending=False).head(top_n)
+
+
+    # recommendations = pd.DataFrame(predictions, columns=['account_id', 'predicted_click'])
+    # recommendations = recommendations.sort_values('predicted_click', ascending=False).head(top_n)
+    # logger.info(f"Recommended mentors: {recommendations}")
     
     return recommendations
