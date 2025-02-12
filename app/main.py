@@ -28,7 +28,7 @@ app.add_middleware(
     allow_headers=["*"],  # Cho phép tất cả headers
 )
 
-app.include_router(recommendation_router, prefix="/api/v1", tags=["recommendation"])
+app.include_router(recommendation_router, prefix="recommendation/api/v1", tags=["recommendation"])
 
 @app.middleware("http")
 async def logging_middleware(request: Request, call_next) -> Response:
