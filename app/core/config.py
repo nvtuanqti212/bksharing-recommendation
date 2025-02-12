@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Settings(BaseSettings):
+    HOST: str  # Định nghĩa các biến cấu hình tại đây
+    PORT: int  # Định nghĩa các biến cấu hình tại đây
     DATABASE_URL: str  # Định nghĩa các biến cấu hình tại đây
     LOG_LEVEL: str   # LOG_LEVEL mặc định là INFO
     LOG_JSON_FORMAT: bool   # LOG_JSON_FORMAT mặc định là False

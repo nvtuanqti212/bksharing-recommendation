@@ -11,7 +11,7 @@ logger = structlog.get_logger('recommendations.py')
 router = APIRouter()
 
 # Get recommendations for mentee by accountId
-@router.get ("/recommendations/content-based-filtering/{accountId}")
+@router.get ("/content-based-filtering/{accountId}")
 async def recommend_content_based_by_account_id(accountId: int, db: Session = Depends(get_db)):
     recommendations = get_content_based_recommendations(db, accountId)
 
@@ -20,7 +20,7 @@ async def recommend_content_based_by_account_id(accountId: int, db: Session = De
     return {"recommendations": recommendations_dict}
 
 # Get recommendations for mentee by accountId  
-@router.get ("/recommendations/collaborative-filtering/{accountId}")
+@router.get ("/collaborative-filtering/{accountId}")
 async def recommend_collaborative_by_account_id(accountId: int, db: Session = Depends(get_db)):
     recommendations = get_collaborative_filtering_recommendations(db, accountId)
 
@@ -30,5 +30,9 @@ async def recommend_collaborative_by_account_id(accountId: int, db: Session = De
     # Convert Pandas DataFrame to list of dicts to avoid numpy types issues
     recommendations_dict = recommendations.to_dict(orient="records")
     return {"recommendations": recommendations_dict}
+
+@router.get ("/test")
+async def test():
+    return {"message": "Hello world!"}
 
 

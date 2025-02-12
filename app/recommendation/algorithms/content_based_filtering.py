@@ -147,6 +147,14 @@ def content_based_filtering(mentee: pd.DataFrame, mentors: pd.DataFrame, top_k: 
     :return: DataFrame of recommended mentors with key columns.
     """
 
+    # Check empty mentee or mentor data
+    if mentee.empty:
+        logger.warning("Empty mentee data")
+        return pd.DataFrame()
+    if mentors.empty:
+        logger.warning("Empty mentor data")
+        return pd.DataFrame()
+
     # Process mentee achievement (wrap single record dict in a list)
     achievements = mentee[['profile_name', 'type', 'description', 'organization', 'position', 'major']].to_dict('records')
 
