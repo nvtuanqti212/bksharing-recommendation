@@ -91,5 +91,4 @@ def hello():
     return "Hello, World!"
 
 if __name__ == "__main__":
-    access_logger.info(f"Starting server at {settings.HOST}:{settings.PORT}")
-    uvicorn.run(app, host=settings.HOST, port=settings.PORT, log_config=None)
+    uvicorn.run(app, host=settings.HOST, port=8000, log_config=None)
