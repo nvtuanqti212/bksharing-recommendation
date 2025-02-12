@@ -111,11 +111,13 @@ def process_mentor_data(mentors: pd.DataFrame) -> pd.DataFrame:
         
         # Extract common mentor-specific information (assume it’s the same for all rows in the group)
         common_info = group.iloc[0][['account_name', 'target_level']].to_dict()
-        if isinstance(common_info['target_level'], (set, list)):
-            target_level = ", ".join(common_info['target_level'])
-        else:
-        # Split the string by commas if it's a string representation of a set
-            target_level = ", ".join(common_info['target_level'].strip('{}').split(', '))
+        # Check target_level is not empty
+        if common_info['target_level']:
+            if isinstance(common_info['target_level'], (set, list)):
+                target_level = ", ".join(common_info['target_level'])
+            else:
+            # Split the string by commas if it's a string representation of a set
+                target_level = ", ".join(common_info['target_level'].strip('{}').split(', '))
         common_info_str = f"Name: {common_info['account_name']} Target Level: {target_level}"
         
         # Combine weighted features for the mentor
@@ -133,6 +135,7 @@ def process_mentor_data(mentors: pd.DataFrame) -> pd.DataFrame:
 
 
 def content_based_filtering(mentee: pd.DataFrame, mentors: pd.DataFrame, top_k: int = 5):
+    logger.info(f"Recommend mentors for mentors: {mentors}")
     """
     Recommend mentors for a given mentee using content-based filtering.
     Processing steps:
