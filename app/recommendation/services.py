@@ -84,7 +84,7 @@ def get_collaborative_filtering_recommendations(db, accountId):
         logger.error(f"Student with account id {accountId} not found")
         return None
 
-    recommendations = collaborative_filtering(student_record, clicks_df, top_k_neighbors=5, top_n=10, lambda_param=100,
+    recommendations = collaborative_filtering(student_record, clicks_df, top_k_neighbors=5, top_n=10, lambda_param=10,
                                               transform_similarity=True)
     
     logger.info(
